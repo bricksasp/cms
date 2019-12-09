@@ -18,7 +18,7 @@ class ArticleController extends BaseController
 {
     /**
      * Lists all Article models.
-     * @OA\Get(path="/article/index",
+     * @OA\Get(path="/cms/article/index",
      *   summary="文章列表",
      *   tags={"cms模块"},
      *   @OA\Parameter(
@@ -69,7 +69,7 @@ class ArticleController extends BaseController
     }
 
     /**
-     * @OA\Get(path="/article/view",
+     * @OA\Get(path="/cms/article/view",
      *   summary="文章详情",
      *   tags={"cms模块"},
      *   @OA\Parameter(

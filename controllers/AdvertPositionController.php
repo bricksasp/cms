@@ -94,7 +94,7 @@ class AdvertPositionController extends BaseController
     }
 
     /**
-     * @OA\Get(path="/advert-position/detail",
+     * @OA\Get(path="/cms/advert-position/detail",
      *   summary="广告位详情",
      *   tags={"cms模块"},
      *   @OA\Parameter(
