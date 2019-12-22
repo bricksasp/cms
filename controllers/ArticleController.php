@@ -10,6 +10,7 @@ use bricksasp\base\BaseController;
 use bricksasp\base\Config;
 use yii\web\HttpException;
 use bricksasp\helpers\Tools;
+use bricksasp\rbac\models\redis\Token;
 
 /**
  * ArticleController implements the CRUD actions for Article model.
@@ -24,6 +25,14 @@ class ArticleController extends BaseController
      *   @OA\Parameter(
      *     description="开启平台功能后，访问商户对应的数据标识，未开启忽略此参数",
      *     name="access-token",
+     *     in="query",
+     *     @OA\Schema(
+     *       type="string"
+     *     )
+     *   ),
+     *   @OA\Parameter(
+     *     description="分类调用代码",
+     *     name="code",
      *     in="query",
      *     @OA\Schema(
      *       type="string"
@@ -60,8 +69,15 @@ class ArticleController extends BaseController
      */
     public function actionIndex()
     {
+        $query = ArticleCategory::find($this->dataOwnerUid())->with(['image']);
+        if ($this->request_entrance == Token::TOKEN_TYPE_BACKEND) {
+            $fields = [];
+        }else{
+            $fields = ['id', 'title'];
+        }
+
         $searchModel = new ArticleSearch();
-        $dataProvider = $searchModel->search($this->queryFilters());
+        $dataProvider = $searchModel->search($this->queryFilters(),$fields);
 
         return $this->pageFormat($dataProvider,['labelItems'=>false,'labels'=>false, 'image'=>[
             ['file_url'=>['implode',['',[Config::instance()->web_url,'###']],'array']]

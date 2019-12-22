@@ -57,6 +57,11 @@ class ArticleSearch extends Article
             ],
         ]);
 
+        if (!empty($params['code'])) {
+            $category = ArticleCategory::find()->where(['code' => $params['code']])->one();
+            $params['cat_id'] = $category->id;
+        }
+
         $this->load($params);
 
         if (!$this->validate()) {

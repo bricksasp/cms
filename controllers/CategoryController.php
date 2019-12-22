@@ -7,6 +7,7 @@ use yii\data\ActiveDataProvider;
 use bricksasp\base\BaseController;
 use yii\web\HttpException;
 use bricksasp\helpers\Tools;
+use bricksasp\rbac\models\redis\Token;
 
 /**
  * CategoryController implements the CRUD actions for ArticleCategory model.
@@ -28,13 +29,21 @@ class CategoryController extends BaseController
     }
 
     /**
-     * Lists all Type models.
+     * Lists all Category models.
      * @return mixed
      */
     public function actionIndex()
     {
+        $map = [];
+        $query = ArticleCategory::find($this->dataOwnerUid())->with(['image']);
+        if ($this->request_entrance == Token::TOKEN_TYPE_BACKEND) {
+            $query = ArticleCategory::find($this->dataOwnerUid())->with(['image']);
+        }else{
+            $query = ArticleCategory::find($this->dataOwnerUid())->with(['image'])->where(['status' => 1])->orderBy(['sort' => SORT_ASC]);
+        }
+
         $dataProvider = new ActiveDataProvider([
-            'query' => ArticleCategory::find($this->dataOwnerUid())->with(['image']),
+            'query' => $query,
         ]);
         return $this->pageFormat($dataProvider,['image'=>[['file_url'=>['implode',['',[\bricksasp\base\Config::instance()->web_url,'###']],'array']]]]);
     }
@@ -56,6 +65,55 @@ class CategoryController extends BaseController
 
     /**
      * 获取分类树
+     * @OA\Get(path="/cms/category/tree",
+     *   summary="获取分类树",
+     *   tags={"cms模块"},
+     *   @OA\Parameter(
+     *     description="用户请求token",
+     *     name="X-Token",
+     *     in="header",
+     *     @OA\Schema(
+     *       type="string"
+     *     )
+     *   ),
+     *   @OA\Parameter(
+     *     description="分类id,返回对应id子树",
+     *     name="id",
+     *     in="query",
+     *     @OA\Schema(
+     *       type="integer"
+     *     )
+     *   ),
+
+     *   @OA\Response(
+     *     response=200,
+     *     description="返回数据",
+     *     @OA\MediaType(
+     *         mediaType="application/json",
+     *         @OA\Schema(ref="#/components/schemas/cmsCategoryList"),
+     *     ),
+     *   ),
+     * )
+     *
+     * @OA\Schema(
+     *   schema="cmsCategoryList",
+     *   description="收货地址结构",
+     *   allOf={
+     *     @OA\Schema(
+     *       @OA\Property(property="id", type="integer", description="分类id"),
+     *       @OA\Property(property="name", type="string", description="分类名称"),
+     *       @OA\Property(property="parent_id", type="integer", description="父id"),
+     *       @OA\Property( property="children", type="array", description="子集", @OA\Items(
+     *            @OA\Property(property="id", type="integer", description="分类id"),
+     *            @OA\Property( property="name", type="string", description="名称"),
+     *            @OA\Property(property="parent_id", type="integer", description="父id"),
+     *         ),
+     *       ),
+     *     )
+     *   }
+     * )
+     * 
+     * @return mixed
      */
     public function actionTree($id=null)
     {
@@ -63,14 +121,30 @@ class CategoryController extends BaseController
         if ($id) {
             $map = ['!=', 'id', (int)$id];
         }
-        $data = ArticleCategory::find($this->dataOwnerUid())->select(['id', 'parent_id', 'name'])
-            ->andWhere($map)
-            ->all();
-        $data = array_map(function ($item)
-        {
-            return $item->toArray();
-        }, $data);
-        $tree = Tools::build_tree($data, $root_id = 0);
+
+        $query = ArticleCategory::find($this->dataOwnerUid())->with(['image']);
+        if ($this->request_entrance == Token::TOKEN_TYPE_BACKEND) {
+            $data = ArticleCategory::find($this->dataOwnerUid())->select(['id', 'parent_id', 'name'])
+                ->andWhere($map)
+                ->all();
+            $data = array_map(function ($item)
+            {
+                return $item->toArray();
+            }, $data);
+        }else{
+            $data = ArticleCategory::find($this->dataOwnerUid())
+                ->select(['id', 'parent_id', 'name','image_id'])
+                ->with(['image'])
+                ->andWhere($map)
+                ->all();
+            foreach ($data as $k => $item) {
+                $row = $item->toArray();
+                $row['image'] = $item->image ? Tools::format_array($item->image,['file_url'=>['implode',['',[\bricksasp\base\Config::instance()->web_url,'###']],'array']]) : (object)[];
+                $data[$k] = $row;
+            }
+        }
+        
+        $tree = Tools::build_tree($data);
         return $this->success($tree);
     }
 

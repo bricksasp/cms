@@ -41,6 +41,7 @@ class ArticleCategory extends \bricksasp\base\BaseActiveRecord
         return [
             [['parent_id', 'status', 'sort', 'user_id', 'created_at', 'updated_at'], 'integer'],
             [['name', 'image_id'], 'string', 'max' => 64],
+            [['code'], 'string', 'max' => 32],
             [['status', 'sort'], 'default', 'value' => 1]
         ];
     }
@@ -58,6 +59,7 @@ class ArticleCategory extends \bricksasp\base\BaseActiveRecord
             'sort' => 'Sort',
             'image_id' => 'Image ID',
             'user_id' => 'User ID',
+            'code' => 'Code',
             'created_at' => 'Created At',
             'updated_at' => 'Updated At',
         ];
