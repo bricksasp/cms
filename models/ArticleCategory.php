@@ -79,13 +79,14 @@ class ArticleCategory extends \bricksasp\base\BaseActiveRecord
     {
         $row = [];
         $model = self::findOne($id);
+        if (!$model) return $row;
+        
         if ($model->parent_id) {
             $row[] = $model->toArray();
             $row = array_merge($this->cascader($model->parent_id), $row);
         }else{
             $row[] = $model->toArray();
         }
-        // print_r($model->toArray());exit;
         return $row;
     }
 }
